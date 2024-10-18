@@ -1,31 +1,25 @@
-name: Semgrep Analysis
-
+name: Semgrep
 on:
+  workflow_dispatch: {}
+  pull_request: {}
   push:
     branches:
+      - main
       - master
-  pull_request:
-    branches:
-      - master
-
+    paths:
+      - .github/workflows/semgrep.yml
+  schedule:
+    # random HH:MM to avoid a load spike on GitHub Actions at 00:00
+    - cron: '47 11 * * *'
 jobs:
   semgrep:
-    runs-on: ubuntu-latest
-
+    name: semgrep/ci
+    runs-on: ubuntu-20.04
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    container:
+      image: semgrep/semgrep
+    if: (github.actor != 'dependabot[bot]')
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-
-      - name: Install Semgrep
-        run: |
-          pip install semgrep
-
-      - name: Run Semgrep
-        run: |
-          semgrep --config auto .
-
+      - uses: actions/checkout@v4
+      - run: semgrep ci
